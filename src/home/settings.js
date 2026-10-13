@@ -8,7 +8,7 @@
  * @property {string} id      "c<slot>"
  * @property {string} name
  * @property {string} url     start page, http(s)
- * @property {number} slot    100..999, decides the site's local address
+ * @property {number} slot    unique number, used to make the id
  * @property {string} search  optional search URL with {q}
  *
  * @typedef {object} Settings
@@ -39,7 +39,7 @@ export function save(s) {
   try { window.localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { /* storage full or blocked */ }
 }
 
-/** Next free slot for a custom site. */
+/** Next free number for a custom site id. */
 export function nextSlot(s) {
   let slot = 100;
   s.custom.forEach((c) => { if (c.slot >= slot) slot = c.slot + 1; });

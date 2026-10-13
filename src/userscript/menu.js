@@ -5,9 +5,11 @@
  * Lives in a closed shadow root so the site's CSS can't restyle it and the
  * site's scripts can't find it.
  */
-import { C, store, setSetting } from './config.js';
-import { upstreamFor } from './urls.js';
-import { hiddenSelectors, clearHiddenSelectors, startPicker } from './adblock.js';
+import { SITE, store, adblockOn } from './site.js';
+import { hiddenSelectors, clearHiddenSelectors } from './block.js';
+import { startPicker } from './picker.js';
+import { goHome, signOut } from './navigation.js';
+import { searchUrl } from '../shared/search.js';
 import { createSpatialNav } from '../shared/spatial.js';
 import iconSvg from '../../assets/icons/source/malagueta.svg';
 
@@ -91,19 +93,6 @@ export function applyZoom(z) {
   document.documentElement.style.zoom = z === 1 ? '' : String(z);
 }
 
-/** Search URL on this site for `q`, or null when the site has no search. */
-export function searchUrl(q) {
-  if (!C.search || !q) return null;
-  let enc = encodeURIComponent(q.trim());
-  if (C.space !== '%20') enc = enc.replace(/%20/g, C.space);
-  const p = C.search.replace('{q}', enc);
-  if (/^https?:/i.test(p)) {
-    const u = new URL(p);
-    return location.origin + u.pathname + u.search;
-  }
-  return location.origin + (p.charAt(0) === '/' ? '' : '/') + p;
-}
-
 export function createMenu() {
   const host = document.createElement('mlg-menu');
   host.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;pointer-events:none;display:block';
@@ -118,7 +107,7 @@ export function createMenu() {
   [scrim, panel, fab, toastEl].forEach((n) => wrap.appendChild(n)); // no append() on Chromium 53
   root.appendChild(wrap);
 
-  const nav = createSpatialNav({ root: () => root, selector: 'button,input', reach: 3 });
+  const nav = createSpatialNav({ root: () => root, selector: 'button,input', reach: 3, hitTest: false });
   let isOpen = false;
   let confirmClear = false;
   let searchRow;
@@ -132,24 +121,24 @@ export function createMenu() {
 
     panel.appendChild(el('div', { class: 'head' }, [
       el('div', { class: 'logo', html: iconSvg }),
-      el('h1', { text: C.name || 'Malagueta' }),
+      el('h1', { text: SITE.name || 'Malagueta' }),
     ]));
-    panel.appendChild(el('p', { class: 'url', text: upstreamFor(location.href) }));
+    panel.appendChild(el('p', { class: 'url', text: location.href }));
 
-    panel.appendChild(el('div', { class: 'row' }, [button('Home', () => { location.href = C.home; })]));
+    panel.appendChild(el('div', { class: 'row' }, [button('Home', () => { close(); goHome(); })]));
     panel.appendChild(el('div', { class: 'row' }, [
       button('◀ Back', () => { close(); history.back(); }, { cls: 'sm' }),
       button('Forward ▶', () => { close(); history.forward(); }, { cls: 'sm' }),
       button('⟳ Reload', () => location.reload()),
     ]));
 
-    if (C.search) {
-      panel.appendChild(el('div', { class: 'row' }, [button('Search ' + C.name, () => showSearch())]));
-      searchInput = el('input', { type: 'search', placeholder: 'Search ' + C.name + '…', enterkeyhint: 'search' });
+    if (SITE.search) {
+      panel.appendChild(el('div', { class: 'row' }, [button('Search ' + SITE.name, () => showSearch())]));
+      searchInput = el('input', { type: 'search', placeholder: 'Search ' + SITE.name + '…', enterkeyhint: 'search' });
       searchInput.addEventListener('keydown', (e) => {
         if (e.keyCode === 13) {
           e.preventDefault();
-          const url = searchUrl(searchInput.value);
+          const url = searchUrl(SITE, searchInput.value, location.origin);
           if (url) location.href = url;
         }
       });
@@ -162,15 +151,11 @@ export function createMenu() {
       button('−', () => stepZoom(-1), { cls: 'sm' }), zoomLabel, button('+', () => stepZoom(1), { cls: 'sm' }),
     ]));
 
+    const blocking = adblockOn();
     panel.appendChild(el('div', { class: 'row' }, [button('Block ads', () => {
-      setSetting('adblock', C.adblock ? '0' : '1');
+      store.set('adblock', !blocking);
       location.reload();
-    }, { val: C.adblock ? 'On' : 'Off', cls: C.adblock ? 'on' : '' })]));
-
-    panel.appendChild(el('div', { class: 'row' }, [button('Show site as', () => {
-      setSetting('ua', C.uaMode === 'desktop' ? 'tv' : 'desktop');
-      location.reload();
-    }, { val: C.uaMode === 'desktop' ? 'Computer' : 'TV' })]));
+    }, { val: blocking ? 'On' : 'Off', cls: blocking ? 'on' : '' })]));
 
     panel.appendChild(el('div', { class: 'row' }, [button('Hide an element…', () => {
       close();
@@ -186,21 +171,20 @@ export function createMenu() {
       }, { val: String(hidden) })]));
     }
 
-    const clearBtn = button('Sign out & clear site data', () => {
+    const clearBtn = button('Clear site data (sign out)', () => {
       if (!confirmClear) {
         confirmClear = true;
         clearBtn.querySelector('.lbl').textContent = 'Press OK again to sign out';
         return;
       }
-      try { localStorage.clear(); sessionStorage.clear(); } catch (e) { /* ignore */ }
-      location.href = '/__mlg/clear';
+      signOut();
     }, { cls: 'danger' });
     panel.appendChild(el('div', { class: 'row' }, [clearBtn]));
 
     panel.appendChild(el('div', { class: 'row' }, [button('Exit Malagueta', () => window.close())]));
 
     panel.appendChild(el('div', { class: 'foot', html:
-      'Malagueta ' + C.version + '<br><span class="keys">' +
+      'Malagueta ' + __APP_VERSION__ + '<br><span class="keys">' +
       '<span style="background:#e53935"></span>menu ' +
       '<span style="background:#43a047"></span>search ' +
       '<span style="background:#fdd835"></span>full screen ' +

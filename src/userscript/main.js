@@ -1,9 +1,14 @@
 /**
- * Malagueta page script, injected by the proxy at the top of every page it
- * serves (as /__mlg/inject.js, built from this folder).
+ * Malagueta user script.
  *
- * Order matters: the API patches go in first, before any of the site's own
- * scripts run; the menu and remote handling are added once the body exists.
+ * webOS's web app manager injects webOSUserScripts/userScript.js from the
+ * app's folder into every page the app shows, before the page's own scripts
+ * run (the same mechanism youtube-webos uses). Sites are opened at their real
+ * addresses, so their players, sign-ins and checks work as in a browser; this
+ * script adds ad blocking, remote control navigation and the menu on top.
+ *
+ * Order matters: the blocking hooks go in first, before any of the site's own
+ * scripts run; the menu is added once the body exists.
  *
  * Remote keys (keyboard equivalents for testing on a computer):
  *   arrows / OK       move between links and buttons, open them
@@ -14,9 +19,9 @@
  *   Blue (F12)        hide an element
  *   Play/Pause, ◀◀ ▶▶ control the video; CH+/CH- scroll a page
  */
-import { C } from './config.js';
-import { installPatches } from './patches.js';
-import { startAdblock, startPicker } from './adblock.js';
+import { startBlocking, addStyle } from './block.js';
+import { startPicker } from './picker.js';
+import { goBack } from './navigation.js';
 import { createMenu, applyZoom, currentZoom } from './menu.js';
 import { createSpatialNav, DIRS } from '../shared/spatial.js';
 
@@ -37,12 +42,6 @@ html.mlg-pointer .mlg-focus { outline: none !important; box-shadow: none !import
   background: rgba(18,10,11,.92); color: #f6ece6; font: 500 20px/1.3 sans-serif; border-radius: 10px; }
 `;
 
-function addPageCss() {
-  const s = document.createElement('style');
-  s.id = 'mlg-page';
-  s.textContent = PAGE_CSS;
-  (document.head || document.documentElement).appendChild(s);
-}
 
 /* ------------------------------------------------------------------------ */
 /* Video                                                                     */
@@ -115,13 +114,6 @@ function isTyping(el) {
   return !/^(button|submit|reset|checkbox|radio|range|color|file|image)$/i.test(el.type || '');
 }
 
-function goBack() {
-  // The home screen is the entry before the first page of a site, so going
-  // back from the first page returns home.
-  if (history.length > 1) history.back();
-  else location.href = C.home;
-}
-
 function setupKeys(menu) {
   const nav = createSpatialNav({
     focusClass: 'mlg-focus',
@@ -143,6 +135,7 @@ function setupKeys(menu) {
     // The element picker has its own key handling.
     if (document.querySelector('.mlg-picker-box')) return undefined;
     if (menu.handleKey(e)) return used();
+    if (menu.isOpen) return undefined; // typing in the menu's search box
 
     if (k === KEY.RED || k === KEY.F9) { menu.open(); return used(); }
     if (k === KEY.GREEN || k === KEY.F10) { menu.open({ search: true }); return used(); }
@@ -204,34 +197,6 @@ function setupKeys(menu) {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Keeping the proxy alive                                                   */
-/* ------------------------------------------------------------------------ */
-
-/**
- * Pings the proxy while the page is open (it stops after a long idle).
- * If it has stopped (the TV slept with the app in the background), restart
- * it through the luna bus when this page can reach it, or explain.
- */
-function keepAlive(menu) {
-  let failures = 0;
-  const ping = () => {
-    fetch('/__mlg/ping', { cache: 'no-store' }).then(() => { failures = 0; }, () => {
-      failures++;
-      if (failures < 2) return;
-      if (window.PalmServiceBridge) {
-        const bridge = new window.PalmServiceBridge();
-        bridge.onservicecallback = () => location.reload();
-        bridge.call('luna://org.malagueta.app.service/start', '{}');
-      } else {
-        menu.toast('Malagueta stopped in the background. Close the app and open it again.');
-      }
-    });
-  };
-  setInterval(ping, 20000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) ping(); });
-}
-
-/* ------------------------------------------------------------------------ */
 /* Start                                                                     */
 /* ------------------------------------------------------------------------ */
 
@@ -240,18 +205,25 @@ function onBody(fn) {
   else document.addEventListener('DOMContentLoaded', fn);
 }
 
-// Already injected (a page that loads its own HTML twice): do nothing.
-if (!window.__MLG_LOADED__) {
+/** Runs `fn` once the document has a root element (it may not yet at injection time). */
+function onRoot(fn) {
+  if (document.documentElement) return fn();
+  const obs = new MutationObserver(() => {
+    if (document.documentElement) { obs.disconnect(); fn(); }
+  });
+  obs.observe(document, { childList: true });
+  return undefined;
+}
+
+// Only on websites: the app's own home screen (file://) has its own code.
+// And only once per page, in the top window.
+if (/^https?:$/.test(location.protocol) && window.top === window && !window.__MLG_LOADED__) {
   window.__MLG_LOADED__ = true;
-  installPatches();
-  addPageCss();
-  applyZoom(currentZoom());
-  startAdblock();
+  startBlocking();
+  addStyle('mlg-page', PAGE_CSS);
+  onRoot(() => applyZoom(currentZoom()));
 
   const menu = createMenu();
   setupKeys(menu);
-  onBody(() => {
-    menu.mount();
-    keepAlive(menu);
-  });
+  onBody(() => menu.mount());
 }

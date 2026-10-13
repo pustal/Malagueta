@@ -28,7 +28,7 @@ const SOURCE_URL = 'https://github.com/pustal/Malagueta';
 /** Direct link to the icon image (not a github.com ".../blob/..." page). */
 const ICON_URI = 'https://raw.githubusercontent.com/pustal/Malagueta/main/assets/icons/largeIcon.png';
 /** One line shown in the Homebrew Channel's list. */
-const DESCRIPTION = 'Adult website viewer with ad blocking, made for the remote';
+const DESCRIPTION = 'Adult website viewer with ad and pop-up blocking, made for the remote';
 
 const appinfo = JSON.parse(readFileSync(join(root, 'appinfo.json'), 'utf8'));
 const ipkName = `${appinfo.id}_${appinfo.version}_all.ipk`;
@@ -49,7 +49,7 @@ const manifest = {
   appDescription: DESCRIPTION,
   iconUri: ICON_URI,
   sourceUrl: SOURCE_URL,
-  // Runs as a normal app; the proxy is an ordinary JS service.
+  // A plain web app: no root, no services.
   rootRequired: false,
   ipkUrl: ipkName,
   ipkHash: { sha256 },

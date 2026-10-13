@@ -1,84 +1,9 @@
 /**
- * Ad blocking inside the page, for what the proxy can't see: elements the
- * site's scripts add after loading, and ad slots the built-in lists miss.
- *
- *  - Removes frames, scripts, images and links that point at ad hosts as
- *    soon as they are added.
- *  - "Hide an element": the user points at an ad (Magic Remote pointer, or
- *    the D-pad focus) and Malagueta remembers a CSS selector for it, per site.
+ * "Hide an element": the user points at an ad the lists miss (Magic Remote
+ * pointer, or the D-pad focus) and Malagueta remembers a CSS selector for it,
+ * on this site, for good. Undo from the menu.
  */
-import { C, store } from './config.js';
-import { resolve, isAdUrl } from './urls.js';
-
-const HIDDEN_KEY = 'hidden';
-let userStyle = null;
-
-/** The user's own hidden-element selectors for this site. */
-export function hiddenSelectors() {
-  return store.get(HIDDEN_KEY, []);
-}
-
-function applyUserStyle() {
-  const list = hiddenSelectors();
-  if (!userStyle) {
-    userStyle = document.createElement('style');
-    userStyle.id = 'mlg-user-hidden';
-    (document.head || document.documentElement).appendChild(userStyle);
-  }
-  userStyle.textContent = list.map((s) => s + '{display:none!important}').join('\n');
-}
-
-export function addHiddenSelector(sel) {
-  const list = hiddenSelectors();
-  if (list.indexOf(sel) === -1) list.push(sel);
-  store.set(HIDDEN_KEY, list);
-  applyUserStyle();
-}
-
-export function clearHiddenSelectors() {
-  store.set(HIDDEN_KEY, []);
-  applyUserStyle();
-}
-
-function urlOf(el) {
-  return el.getAttribute('src') || el.getAttribute('data-src') || el.getAttribute('href') || '';
-}
-
-/** Removes `el` if it loads something from an ad host. */
-function check(el) {
-  if (el.nodeType !== 1) return;
-  const tag = el.tagName;
-  if (tag === 'IFRAME' || tag === 'SCRIPT' || tag === 'IMG' || tag === 'EMBED' || tag === 'OBJECT' || tag === 'A') {
-    const raw = urlOf(el);
-    if (raw && isAdUrl(resolve(raw))) {
-      el.remove();
-      return;
-    }
-  }
-  if (el.querySelectorAll && el.childElementCount) {
-    const inner = el.querySelectorAll('iframe[src],iframe[data-src],img[src],a[href],embed[src]');
-    for (let i = 0; i < inner.length; i++) {
-      const raw = urlOf(inner[i]);
-      if (raw && isAdUrl(resolve(raw))) inner[i].remove();
-    }
-  }
-}
-
-export function startAdblock() {
-  applyUserStyle(); // the user's own hidden elements apply even with ad blocking off
-  if (!C.adblock) return;
-  const obs = new MutationObserver((records) => {
-    for (let i = 0; i < records.length; i++) {
-      const added = records[i].addedNodes;
-      for (let j = 0; j < added.length; j++) check(added[j]);
-    }
-  });
-  obs.observe(document.documentElement, { childList: true, subtree: true });
-}
-
-/* ------------------------------------------------------------------------ */
-/* Element picker                                                            */
-/* ------------------------------------------------------------------------ */
+import { addHiddenSelector } from './block.js';
 
 /** A selector for `el` that is specific but survives page reloads. */
 export function selectorFor(el) {

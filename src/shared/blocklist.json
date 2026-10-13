@@ -1,5 +1,5 @@
 {
-  "_comment": "Ad blocking data shared by the proxy (services/proxy/adblock.js) and the injected page script (src/inject). hosts: a host is blocked when it equals an entry or ends with '.' + entry. paths: substrings that mark a URL as an ad on any host. inlineMarkers: small inline <script>s containing one of these are dropped from pages (ad and pop-under loaders). selectors: hidden on every site; per-site ones live in sites.json.",
+  "_comment": "Ad blocking data used by the user script (src/userscript/block.js). hosts: a host is blocked when it equals an entry or ends with '.' + entry. paths: substrings that mark a URL on a third-party host as an ad. selectors: hidden on every site; per-site ones live in sites.json.",
   "hosts": [
     "trafficjunky.net",
     "trafficjunky.com",
@@ -51,7 +51,13 @@
     "onclickmax.com",
     "lookandfind.me",
     "hotjar.com",
-    "scorecardresearch.com"
+    "scorecardresearch.com",
+    "mmcdn.com",
+    "highwebmedia.com",
+    "chaturbate.com",
+    "stripchat.com",
+    "doublepimp.com",
+    "ad.xhamster.com"
   ],
   "paths": [
     "/ads/",
@@ -65,22 +71,6 @@
     "/vast.xml",
     "/vast?",
     "/prebid"
-  ],
-  "inlineMarkers": [
-    "popMagic",
-    "popunder",
-    "pop_under",
-    "AdProvider",
-    "exoclick",
-    "exosrv",
-    "magsrv",
-    "tsyndicate",
-    "trafficjunky",
-    "juicyads",
-    "adsbyjuicy",
-    "adsterra",
-    "clickadu",
-    "hilltopads"
   ],
   "selectors": [
     "ins.adsbygoogle",

@@ -8,7 +8,6 @@
  *   node scripts/tv.mjs install           install out/<id>_<version>_all.ipk
  *   node scripts/tv.mjs launch            start the app
  *   node scripts/tv.mjs inspect           Chrome DevTools for the app's pages
- *   node scripts/tv.mjs inspect-service   Node inspector for the proxy service
  *
  * Set TV_DEVICE to use a device name other than "tv".
  */
@@ -23,7 +22,6 @@ const commands = {
   install: ['ares-install', ['-d', device, ipk]],
   launch: ['ares-launch', ['-d', device, id]],
   inspect: ['ares-inspect', ['-d', device, '--app', id, '--open']],
-  'inspect-service': ['ares-inspect', ['-d', device, '--service', `${id}.service`, '--open']],
 };
 
 const action = process.argv[2];

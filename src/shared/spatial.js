@@ -17,11 +17,29 @@ export const FOCUSABLE = [
 /** Directions by key code: left, up, right, down. */
 export const DIRS = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
 
+/**
+ * Cheap visibility check. Elements with display:none have no box; hidden or
+ * covered elements on screen are caught by the hit test in dropCovered, which
+ * is far cheaper than getComputedStyle on every link of a big page.
+ */
 function isVisible(el, r) {
-  if (r.width < 2 || r.height < 2) return false;
-  if (el.disabled) return false;
-  const s = window.getComputedStyle(el);
-  return s.visibility !== 'hidden' && s.display !== 'none' && Number(s.opacity) > 0.05;
+  return r.width >= 2 && r.height >= 2 && !el.disabled;
+}
+
+/** Topmost element at a point, looking inside shadow roots we can see into. */
+function elementAt(x, y) {
+  let el = document.elementFromPoint(x, y);
+  while (el && el.shadowRoot && el.shadowRoot.elementFromPoint) {
+    const inner = el.shadowRoot.elementFromPoint(x, y);
+    if (!inner || inner === el) break;
+    el = inner;
+  }
+  return el;
+}
+
+/** Malagueta's own overlays (menu button, picker) don't count as covering the page. */
+function isOwnUi(el) {
+  return el.tagName === 'MLG-MENU' || /(^|\s)mlg-/.test(String(el.className || ''));
 }
 
 /**
@@ -78,6 +96,7 @@ function score(a, b, dir) {
  * @param {string}   [opts.focusClass]         class put on the current element
  * @param {number}   [opts.reach]              how far off-screen to look, in viewport heights
  * @param {function(string): boolean} [opts.onEdge]  nothing found that way; return true if handled
+ * @param {boolean}  [opts.hitTest]          false to skip the covered-element check (inside our own dialogs)
  */
 export function createSpatialNav(opts = {}) {
   const getRoot = opts.root || (() => document);
@@ -101,7 +120,33 @@ export function createSpatialNav(opts = {}) {
       if (el.tagName !== 'A' && el.querySelector && el.querySelector('a[href],button') && !el.matches('button,a')) continue;
       out.push({ el, r });
     }
-    return out;
+    return opts.hitTest === false ? out : dropCovered(out, vw, vh);
+  }
+
+  /**
+   * Drops elements hidden behind something else (an age gate, a cookie
+   * banner, a dialog), checked by what is actually on screen at their middle.
+   * When something covers on-screen elements, an overlay is up: then only
+   * the on-screen elements that can be reached are kept, so focus stays in
+   * the dialog instead of wandering under it.
+   */
+  function dropCovered(list, vw, vh) {
+    const kept = [];
+    let covered = 0;
+    for (let i = 0; i < list.length; i++) {
+      const c = list[i];
+      const r = c.r;
+      const x = Math.min(Math.max((r.left + r.right) / 2, 1), vw - 1);
+      const y = Math.min(Math.max((r.top + r.bottom) / 2, 1), vh - 1);
+      const onScreen = r.bottom > 0 && r.top < vh;
+      if (!onScreen) { kept.push(c); continue; }
+      const hit = elementAt(x, y);
+      if (!hit || hit === c.el || c.el.contains(hit) || hit.contains(c.el)) kept.push(c);
+      else if (!isOwnUi(hit)) covered++;
+      else kept.push(c);
+    }
+    if (!covered) return kept;
+    return kept.filter((c) => c.r.bottom > 0 && c.r.top < vh);
   }
 
   function setCurrent(el) {

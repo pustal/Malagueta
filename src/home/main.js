@@ -2,12 +2,13 @@
  * Malagueta home screen: the grid of sites, a search box, user-added sites,
  * an optional PIN lock and the exit prompt.
  *
- * Served by the proxy from the home origin; opening a site goes to
- * /api/open?site=<id>[&q=<search>], which starts that site's local origin and
- * redirects there. Going Back from a site's first page lands here again.
+ * This is the app's own page (index.html). Sites open at their real address
+ * in this same window; the user script (src/userscript) takes over there.
+ * Going Back from a site's first page lands here again.
  */
 import builtinSites from '../shared/sites.json';
 import { createSpatialNav, DIRS } from '../shared/spatial.js';
+import { searchUrl } from '../shared/search.js';
 import { load, save, nextSlot, hashPin } from './settings.js';
 import iconSvg from '../../assets/icons/source/malagueta.svg';
 import './home.css';
@@ -49,25 +50,13 @@ function hostLabel(site) {
   try { return new URL(site.url).hostname.replace(/^www\./, ''); } catch (e) { return site.url; }
 }
 
-/** Sends the custom sites to the proxy (it doesn't store them). */
-function syncCustom() {
-  return fetch('/api/custom', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(settings.custom),
-  }).catch(() => {});
-}
-
 function persist() {
   save(settings);
 }
 
+/** Opens a site (or a search on it) in this window. */
 function openSite(site, q) {
-  const go = () => {
-    location.href = '/api/open?site=' + encodeURIComponent(site.id) + (q ? '&q=' + encodeURIComponent(q) : '');
-  };
-  if (site.custom) syncCustom().then(go);
-  else go();
+  location.href = (q && searchUrl(site, q)) || site.url;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -226,7 +215,6 @@ function editSite(site) {
       };
       settings.custom = settings.custom.filter((c) => c.id !== entry.id).concat([entry]);
       persist();
-      syncCustom();
       closeDialog();
       render();
     } },
@@ -236,7 +224,6 @@ function editSite(site) {
     buttons.splice(1, 0, { label: 'Remove', cls: 'danger', action: () => {
       settings.custom = settings.custom.filter((c) => c.id !== site.id);
       persist();
-      syncCustom();
       closeDialog();
       render();
     } });
@@ -249,9 +236,10 @@ function openSettings() {
   showDialog('Settings', [
     h('p', { text: 'PIN lock: ' + (pinOn ? 'on' : 'off') + '. A PIN asked when Malagueta opens keeps it out of casual sight on a shared TV.' }),
     h('p', { class: 'muted', html:
-      'How it works: sites open through a small proxy that runs inside the app on this TV. ' +
-      'It removes ads and pop-ups and adds remote control navigation. Nothing is sent anywhere else. ' +
-      'Each site keeps its own sign-in; use <b>Sign out &amp; clear site data</b> in a site\'s menu to sign out.' }),
+      'How it works: sites open at their real address, like in a browser, and Malagueta adds ad and ' +
+      'pop-up blocking and remote control navigation on top. Nothing is sent anywhere else. ' +
+      'Each site keeps its own sign-in; sign out with the site\'s own Log out, or ' +
+      '<b>Clear site data</b> in the site\'s menu.' }),
     h('p', { class: 'muted', text: 'Malagueta ' + __APP_VERSION__ }),
   ], [
     { label: pinOn ? 'Remove PIN' : 'Set a PIN', cls: 'primary', action: () => (pinOn ? removePin() : setPin()) },
@@ -394,8 +382,6 @@ window.addEventListener('mousemove', () => document.documentElement.classList.ad
 /* Start                                                                     */
 /* ------------------------------------------------------------------------ */
 
-syncCustom();
-setInterval(() => { fetch('/api/ping', { cache: 'no-store' }).catch(() => {}); }, 20000);
 
 if (isUnlocked()) render();
 else lockScreen(render);
