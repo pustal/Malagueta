@@ -1,6 +1,6 @@
 {
   "id": "org.malagueta.app",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "vendor": "Malagueta",
   "type": "web",
   "main": "index.html",
@@ -13,8 +13,5 @@
   "resolution": "1920x1080",
   "disableBackHistoryAPI": true,
   "handlesRelaunch": false,
-  "uiRevision": 2,
-  "vendorExtension": {
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
-  }
+  "uiRevision": 2
 }

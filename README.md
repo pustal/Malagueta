@@ -58,23 +58,47 @@ Malagueta's user script (`src/userscript`) adds, on every site:
   which keeps to whatever dialog is on top; media keys; the menu (`menu.js`);
   the element picker (`picker.js`).
 
+### Old TV browser engines
+
+webOS 6 TVs browse with **Chromium 79** (2019), webOS 5 with 68. Today's sites
+ship code that engine can't run, so without help Pornhub shows a black screen,
+FapHouse's buttons do nothing and xHamster asks you to update your browser.
+The user script bridges the gap, and does nothing on engines that don't need it:
+
+- **JavaScript syntax** (`compat.js`, `lower.js`): every script the page loads
+  is test-compiled; one the engine rejects is rewritten into older syntax just
+  before it runs, in its original place and order. Handles `?.`, `??`,
+  `||=`/`&&=`/`??=`, private methods (`#m()`), `static {}` blocks and `1_000`.
+  Scripts that compile fine are remembered per site and not checked again.
+- **Built-ins** (`polyfills.js`): `replaceAll`, `at`, `Object.hasOwn`,
+  `findLast`, `structuredClone`, `Promise.any` and a few more, only when missing.
+- **CSS** (`cssfix.js`): `inset` (overlays such as age gates) and `:is()`/`:where()`
+  selectors are rewritten into rules the engine understands.
+- **Site quirks** (`quirks.js`): xHamster's "Please update your browser" page is
+  dismissed automatically.
+
+Not covered: sites built from ES modules (SpankBang currently), flex `gap`,
+`aspect-ratio` and `:has()` in CSS (cosmetic). Troubleshooting on the TV's
+DevTools: `localStorage['mlg:disable'] = 'compat'` (or `polyfills`,
+`blocking`) switches a part off for that site.
+
 The home screen (`src/home`) is the app's own page. Back from a site's first page
 returns to it, and the menu's Home jumps back to it through the history.
 
-The app identifies itself to sites as desktop Chrome on Linux
-(`vendorExtension.userAgent` in `appinfo.json`), so sites serve their full
-desktop pages rather than their own "Smart TV" versions.
+Sites see the TV's own browser identity (webOS ignores a custom User-Agent
+in `appinfo.json` for apps like this one), so some serve their TV versions:
+Pornhub shows its remote-friendly TV interface.
 
 ### Known limits
 
-- **First TV run pending.** Everything above was checked against the real sites
-  in desktop Chromium with the script injected the way webOS does it (D-pad, age
-  gates, menu, search, Home, ad blocking). Video decoding can't be checked there
-  (no H.264), so playback still needs confirming on the TV.
-- **The desktop User-Agent** says Chrome 87 (webOS 22). If your TV is older and a
-  site misbehaves, set its real Chrome version there, or remove
-  `vendorExtension` to get the sites' own TV versions.
-- **Cloudflare checks** (SpankBang) show a "Verify you are human" box inside a
+- **Checked in Chromium 79, not yet on the TV.** The fixes above were tested
+  against the real sites in an actual Chromium 79 build with the webOS 6
+  User-Agent (age gates, D-pad, menu, ads, players loading their streams).
+  That build can't decode H.264, so watching a video still needs confirming on
+  the TV. Pornhub's video page could only be partly checked from here (its
+  firewall blocked the test machine).
+- **SpankBang** loads its code as ES modules, which the compatibility layer
+  can't rewrite yet, so on webOS 6 it may not work. Its Cloudflare checks also show a "Verify you are human" box inside a
   frame the D-pad can't reach: tick it with the Magic Remote pointer.
 - **Ad lists need tuning.** Sites change their markup often. For leftovers, use
   🔵 Blue → hide, or add selectors to `src/shared/sites.json`. Search URLs for
@@ -87,7 +111,7 @@ Requirements: Node 20+ (see `.nvmrc`). The webOS CLI tools come with `npm instal
 ```sh
 npm install
 npm run build          # dist/: home screen, webOSUserScripts/userScript.js, icons
-npm test               # search URL and site list checks
+npm test               # syntax lowering, CSS repairs, search URLs, site list
 npm run package        # out/org.malagueta.app_<version>_all.ipk + Homebrew manifest
 npm run icons          # regenerate icon.png, largeIcon.png, splash.png from the SVG
 ```
@@ -112,7 +136,9 @@ npm run tv:deploy      # package, install, launch
 npm run tv:inspect     # DevTools for the app (home screen and sites)
 ```
 
-The package targets webOS 4.0 and newer (Chromium 53 and up).
+The package installs on webOS 4.0 and newer; the compatibility layer is aimed
+at webOS 5 and 6 (Chromium 68/79). On webOS 4 (Chromium 53) many of today's
+sites will still fail.
 
 ## Project layout
 

@@ -19,6 +19,10 @@
  *   Blue (F12)        hide an element
  *   Play/Pause, ◀◀ ▶▶ control the video; CH+/CH- scroll a page
  */
+import { installPolyfills } from './polyfills.js';
+import { startCompat } from './compat.js';
+import { startCssCompat } from './cssfix.js';
+import { startQuirks } from './quirks.js';
 import { startBlocking, addStyle } from './block.js';
 import { startPicker } from './picker.js';
 import { goBack } from './navigation.js';
@@ -219,7 +223,17 @@ function onRoot(fn) {
 // And only once per page, in the top window.
 if (/^https?:$/.test(location.protocol) && window.top === window && !window.__MLG_LOADED__) {
   window.__MLG_LOADED__ = true;
-  startBlocking();
+  // Troubleshooting: localStorage['mlg:disable'] = 'polyfills,compat,blocking'
+  // switches parts off on that site (set it from the TV's DevTools).
+  let off = '';
+  try { off = localStorage.getItem('mlg:disable') || ''; } catch (e) { /* ignore */ }
+  if (off.indexOf('polyfills') === -1) installPolyfills();
+  if (off.indexOf('blocking') === -1) startBlocking(); // first: ad scripts are dropped before compat would rewrite them
+  if (off.indexOf('compat') === -1) {
+    startCompat();
+    startCssCompat();
+  }
+  startQuirks();
   addStyle('mlg-page', PAGE_CSS);
   onRoot(() => applyZoom(currentZoom()));
 
