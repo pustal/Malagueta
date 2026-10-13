@@ -1,6 +1,6 @@
 /**
  * Malagueta home screen: the grid of sites, a search box, user-added sites,
- * an optional PIN lock and the exit prompt.
+ * an optional PIN lock, the About dialog and the exit prompt.
  *
  * This is the app's own page (index.html). Sites open at their real address
  * in this same window; the user script (src/userscript) takes over there.
@@ -10,6 +10,7 @@ import builtinSites from '../shared/sites.json';
 import { createSpatialNav, DIRS } from '../shared/spatial.js';
 import { searchUrl } from '../shared/search.js';
 import { load, save, nextSlot, hashPin } from './settings.js';
+import { LINKS, shortUrl, qrSvg, canOpenBrowser, openInTvBrowser } from './about.js';
 import iconSvg from '../../assets/icons/source/malagueta.svg';
 import './home.css';
 
@@ -54,9 +55,30 @@ function persist() {
   save(settings);
 }
 
-/** Opens a site (or a search on it) in this window. */
+/** True when this TV's browser engine can't parse today's JavaScript (webOS 5/6). */
+function engineIsOld() {
+  try {
+    // eslint-disable-next-line no-new-func
+    new Function('var a; a?.b; a ?? 1;');
+    return false;
+  } catch (e) {
+    return true;
+  }
+}
+
+/**
+ * Opens a site (or a search on it) in this window. On old engines it goes
+ * through the site's /robots.txt loader page, so the user script can rewrite
+ * the page before its scripts run (see src/userscript/loader.js).
+ */
 function openSite(site, q) {
-  location.href = (q && searchUrl(site, q)) || site.url;
+  const url = (q && searchUrl(site, q)) || site.url;
+  if (!engineIsOld()) {
+    location.href = url;
+    return;
+  }
+  const u = new URL(url);
+  location.href = u.origin + '/robots.txt#mlg=' + encodeURIComponent(u.pathname + u.search + u.hash);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -81,6 +103,7 @@ function render() {
     h('div', { class: 'actions' }, [
       h('button', { class: 'btn ghost', 'data-id': 'edit', onclick: toggleEdit, text: editMode ? 'Done' : 'Edit sites' }),
       h('button', { class: 'btn ghost', 'data-id': 'settings', onclick: openSettings, text: 'Settings' }),
+      h('button', { class: 'btn ghost', 'data-id': 'about', onclick: openAbout, text: 'About' }),
     ]),
   ]));
 
@@ -240,11 +263,54 @@ function openSettings() {
       'pop-up blocking and remote control navigation on top. Nothing is sent anywhere else. ' +
       'Each site keeps its own sign-in; sign out with the site\'s own Log out, or ' +
       '<b>Clear site data</b> in the site\'s menu.' }),
-    h('p', { class: 'muted', text: 'Malagueta ' + __APP_VERSION__ }),
   ], [
     { label: pinOn ? 'Remove PIN' : 'Set a PIN', cls: 'primary', action: () => (pinOn ? removePin() : setPin()) },
     { label: 'Close', action: closeDialog },
   ]);
+}
+
+/* ------------------------------------------------------------------------ */
+/* About                                                                     */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * The version, licence and the project's links (GitHub and Ko-fi), each as a
+ * QR code and a short address. On the TV there is also a button per link
+ * that opens it in the TV's browser (see about.js).
+ */
+function openAbout() {
+  const status = h('p', { class: 'error' });
+  const cards = h('div', { class: 'about-links' }, LINKS.map((link) => h('div', { class: 'about-link' }, [
+    h('div', { class: 'qr', html: qrSvg(link.url) }),
+    h('p', { class: 'about-label', text: link.label }),
+    h('p', { class: 'about-url', text: shortUrl(link.url) }),
+  ])));
+
+  const buttons = [];
+  if (canOpenBrowser()) {
+    LINKS.forEach((link, i) => buttons.push({
+      label: link.button,
+      cls: i === 0 ? 'primary' : '',
+      action: () => {
+        status.textContent = '';
+        openInTvBrowser(link.url).then(closeDialog, (err) => {
+          status.textContent = 'Couldn\'t open the browser: ' + err.message;
+        });
+      },
+    }));
+  }
+  buttons.push({ label: 'Close', action: closeDialog });
+
+  const box = showDialog('About Malagueta', [
+    h('p', { text: 'An adult website viewer for webOS TVs, with ad and pop-up blocking and navigation made for the remote.' }),
+    h('p', { class: 'muted', text: 'Version ' + __APP_VERSION__ + ' · Free software under the GPL-3.0 licence · Not affiliated with any of the sites.' }),
+    cards,
+    h('p', { class: 'muted', text: canOpenBrowser()
+      ? 'Scan a code with your phone, or open the page in the TV\'s browser.'
+      : 'Scan a code with your phone, or type the address.' }),
+    status,
+  ], buttons);
+  box.classList.add('about');
 }
 
 /* ------------------------------------------------------------------------ */

@@ -1,6 +1,6 @@
 {
   "name": "malagueta",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Adult website viewer for LG webOS TVs: popular sites with ads and pop-ups blocked, sign-in and search, made for the remote.",
   "private": true,
   "type": "module",
@@ -27,6 +27,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "@webos-tools/cli": "^3.2.6",
     "acorn": "^8.12.1",
-    "esbuild": "0.24.2"
+    "esbuild": "0.24.2",
+    "qrcode-generator": "^2.0.4"
   }
 }

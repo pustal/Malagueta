@@ -37,7 +37,7 @@ const MAX_SCRIPT_CHARS = 6 * 1024 * 1024;
 const handled = new WeakSet();
 
 /** True when the engine parses modern syntax itself (Chromium 85+). */
-function engineIsModern() {
+export function engineIsModern() {
   try {
     // eslint-disable-next-line no-new-func
     new Function('var a, b; a?.b; a ?? b; a ||= b; a &&= b; a ??= b;');
@@ -48,7 +48,7 @@ function engineIsModern() {
 }
 
 /** True when `code` can't be compiled by this engine. */
-function rejected(code) {
+export function rejected(code) {
   try {
     // eslint-disable-next-line no-new-func
     new Function(code);
@@ -68,10 +68,23 @@ export function lower(code, name) {
   try {
     const out = lowerSyntax(code);
     if (rejected(out)) return null;
-    return name ? out + '\n//# sourceURL=' + name : out;
+    return name ? withSrc(out, name) + '\n//# sourceURL=' + name : out;
   } catch (e) {
     return null;
   }
+}
+
+/**
+ * A script that was external keeps reporting its own URL as
+ * document.currentScript.src once it runs inline: bundlers (webpack's
+ * automatic public path) use it to find their other files. The line goes
+ * after a leading "use strict" so strict mode is kept.
+ */
+function withSrc(code, url) {
+  const shim = 'if(document.currentScript)try{Object.defineProperty(document.currentScript,"src",{value:'
+    + JSON.stringify(url) + ',configurable:true})}catch(e){}\n';
+  const m = /^(\s*(?:(?:'use strict'|"use strict");?\s*))/.exec(code);
+  return m ? m[1] + shim + code.slice(m[1].length) : shim + code;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -87,11 +100,11 @@ function loadOk() {
   return okList;
 }
 
-function isKnownOk(url) {
+export function isKnownOk(url) {
   return loadOk().indexOf(url) !== -1;
 }
 
-function rememberOk(url) {
+export function rememberOk(url) {
   const list = loadOk();
   if (list.indexOf(url) !== -1) return;
   list.push(url);

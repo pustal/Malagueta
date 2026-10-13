@@ -235,6 +235,7 @@ export function startCssCompat() {
   });
   obs.observe(document, { childList: true, subtree: true });
   // The page's own <style> elements, once their text is complete.
-  document.addEventListener('DOMContentLoaded', () => scan(document));
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => scan(document));
+  else scan(document);
   return true;
 }

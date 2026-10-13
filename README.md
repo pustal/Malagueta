@@ -29,7 +29,9 @@ or endorsed by, any of these sites. Respect each site's terms and your local law
 On the home screen, type in the search box and pick which site to search with
 the chips under it. **Edit sites** hides sites you don't use and edits your own.
 **Settings** can set a 4-digit PIN asked when Malagueta opens (a curtain for a
-shared TV, not encryption).
+shared TV, not encryption). **About** shows the version and QR codes for this
+page and for [Ko-fi](https://ko-fi.com/pustal), and on the TV can open either in
+the TV's browser.
 
 Signing in works as in a browser: use the site's own sign-in page. Each site keeps
 its own sign-in. To sign out use the site's own Log out (the menu's **Clear site
@@ -42,7 +44,7 @@ TV's browser engine would show them. Players, sign-ins and captchas therefore
 behave like in a browser.
 
 webOS's web app manager injects `webOSUserScripts/userScript.js` from an app's
-folder into every page that app shows, before the page's own scripts run (it is
+folder into every page that app shows, once the page has finished loading (it is
 how [youtube-webos](https://github.com/webosbrew/youtube-webos) blocks ads).
 Malagueta's user script (`src/userscript`) adds, on every site:
 
@@ -63,11 +65,24 @@ Malagueta's user script (`src/userscript`) adds, on every site:
 webOS 6 TVs browse with **Chromium 79** (2019), webOS 5 with 68. Today's sites
 ship code that engine can't run, so without help Pornhub shows a black screen,
 FapHouse's buttons do nothing and xHamster asks you to update your browser.
-The user script bridges the gap, and does nothing on engines that don't need it:
+The user script bridges the gap, and does nothing on engines that don't need it.
+
+Because webOS only runs the user script after a page has loaded, the site's
+scripts have already failed by then. So on old engines pages are opened through
+a **loader** (`loader.js`): the app first opens the site's own `/robots.txt`
+(a plain-text page on the same site, with no scripts) with the wanted page in
+the address (`/robots.txt#mlg=/path`). There the user script fetches the real
+page and its scripts, rewrites what the engine can't run, switches the address
+back to the real page and writes the result into the document, so the page is
+built with everything fixed before any of its scripts run. Links to the same
+site go through the loader; a page that is reached another way (Back, a form
+POST) is checked once loaded and reloaded through the loader if it needs it.
+The fixes applied:
 
 - **JavaScript syntax** (`compat.js`, `lower.js`): every script the page loads
-  is test-compiled; one the engine rejects is rewritten into older syntax just
-  before it runs, in its original place and order. Handles `?.`, `??`,
+  is test-compiled; one the engine rejects is rewritten into older syntax and
+  run in its original place and order (scripts added later are caught as
+  they are inserted). Handles `?.`, `??`,
   `||=`/`&&=`/`??=`, private methods (`#m()`), `static {}` blocks and `1_000`.
   Scripts that compile fine are remembered per site and not checked again.
 - **Built-ins** (`polyfills.js`): `replaceAll`, `at`, `Object.hasOwn`,
@@ -77,9 +92,12 @@ The user script bridges the gap, and does nothing on engines that don't need it:
 - **Site quirks** (`quirks.js`): xHamster's "Please update your browser" page is
   dismissed automatically.
 
+Expect a short flash of the site's robots.txt text and a dark "Loading…" screen
+on each page change on webOS 5/6: that is the loader at work.
+
 Not covered: sites built from ES modules (SpankBang currently), flex `gap`,
 `aspect-ratio` and `:has()` in CSS (cosmetic). Troubleshooting on the TV's
-DevTools: `localStorage['mlg:disable'] = 'compat'` (or `polyfills`,
+DevTools: `localStorage['mlg:disable'] = 'loader'` (or `compat`, `polyfills`,
 `blocking`) switches a part off for that site.
 
 The home screen (`src/home`) is the app's own page. Back from a site's first page
@@ -91,12 +109,11 @@ Pornhub shows its remote-friendly TV interface.
 
 ### Known limits
 
-- **Checked in Chromium 79, not yet on the TV.** The fixes above were tested
-  against the real sites in an actual Chromium 79 build with the webOS 6
-  User-Agent (age gates, D-pad, menu, ads, players loading their streams).
-  That build can't decode H.264, so watching a video still needs confirming on
-  the TV. Pornhub's video page could only be partly checked from here (its
-  firewall blocked the test machine).
+- **Checked in Chromium 79, with the user script run after page load as on the
+  TV.** Tested against the real sites (age gates, D-pad, menu, ads, players
+  loading their streams). That build can't decode H.264, so watching a video
+  still needs confirming on the TV; Pornhub's own video endpoint refused the
+  test machine.
 - **SpankBang** loads its code as ES modules, which the compatibility layer
   can't rewrite yet, so on webOS 6 it may not work. Its Cloudflare checks also show a "Verify you are human" box inside a
   frame the D-pad can't reach: tick it with the Magic Remote pointer.
@@ -128,7 +145,18 @@ npm run watch          # rebuilds dist/ on every change, including dist/malaguet
 
 ### Installing on the TV
 
-With Developer Mode or a rooted TV, register it once with `npx ares-setup-device`
+From the [webOS Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel):
+in its **Settings → Add repository**, add
+
+```
+https://pustal.github.io/webos-repo/api/apps.json
+```
+
+and install Malagueta from the list; updates show up there too. Each GitHub
+release carries the `.ipk` and `org.malagueta.app.manifest.json` (both written
+by `npm run package`), which is what the repository points at.
+
+To install a build of your own, with Developer Mode or a rooted TV, register it once with `npx ares-setup-device`
 (name it `tv`), then:
 
 ```sh
@@ -144,13 +172,17 @@ sites will still fail.
 
 ```
 appinfo.json, index.html     webOS app manifest and home screen page
-src/home/                    home screen
+src/home/                    home screen (grid, search, settings, About)
 src/userscript/              the script webOS injects into every site
 src/shared/                  sites.json, blocklist.json, search, spatial navigation
 assets/icons/                launcher icons and splash; source/malagueta.svg is the original
 scripts/                     icons, TV helpers, Homebrew manifest
 test/                        tests
 ```
+
+## Support
+
+If you find Malagueta useful, please consider [buying me a Ko-fi](https://ko-fi.com/pustal).
 
 ## License
 

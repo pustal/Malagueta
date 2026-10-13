@@ -20,7 +20,8 @@
  *   Play/Pause, ◀◀ ▶▶ control the video; CH+/CH- scroll a page
  */
 import { installPolyfills } from './polyfills.js';
-import { startCompat } from './compat.js';
+import { startCompat, engineIsModern } from './compat.js';
+import { isLoaderPage, renderFromLoader, reloadIfBroken, routeNavigation } from './loader.js';
 import { startCssCompat } from './cssfix.js';
 import { startQuirks } from './quirks.js';
 import { startBlocking, addStyle } from './block.js';
@@ -219,14 +220,8 @@ function onRoot(fn) {
   return undefined;
 }
 
-// Only on websites: the app's own home screen (file://) has its own code.
-// And only once per page, in the top window.
-if (/^https?:$/.test(location.protocol) && window.top === window && !window.__MLG_LOADED__) {
-  window.__MLG_LOADED__ = true;
-  // Troubleshooting: localStorage['mlg:disable'] = 'polyfills,compat,blocking'
-  // switches parts off on that site (set it from the TV's DevTools).
-  let off = '';
-  try { off = localStorage.getItem('mlg:disable') || ''; } catch (e) { /* ignore */ }
+/** Sets the user script up in the current document. */
+function init(off) {
   if (off.indexOf('polyfills') === -1) installPolyfills();
   if (off.indexOf('blocking') === -1) startBlocking(); // first: ad scripts are dropped before compat would rewrite them
   if (off.indexOf('compat') === -1) {
@@ -240,4 +235,33 @@ if (/^https?:$/.test(location.protocol) && window.top === window && !window.__ML
   const menu = createMenu();
   setupKeys(menu);
   onBody(() => menu.mount());
+}
+
+// Only on websites: the app's own home screen (file://) has its own code.
+// And only once per page, in the top window.
+if (/^https?:$/.test(location.protocol) && window.top === window && !window.__MLG_LOADED__) {
+  window.__MLG_LOADED__ = true;
+  // Troubleshooting: localStorage['mlg:disable'] = 'polyfills,compat,blocking,loader'
+  // switches parts off on that site (set it from the TV's DevTools).
+  let off = '';
+  try { off = localStorage.getItem('mlg:disable') || ''; } catch (e) { /* ignore */ }
+
+  // webOS runs this script only after the page has loaded. On an engine too
+  // old for the site's scripts, that is too late to fix them as they load,
+  // so pages go through the loader (loader.js) instead.
+  const late = document.readyState !== 'loading';
+  const useLoader = late && !engineIsModern() && off.indexOf('compat') === -1 && off.indexOf('loader') === -1;
+
+  if (useLoader && isLoaderPage()) {
+    renderFromLoader(() => {
+      init(off);
+      routeNavigation();
+    });
+  } else {
+    init(off);
+    if (useLoader) {
+      routeNavigation();
+      if (!window.__MLG_RENDERED__) reloadIfBroken();
+    }
+  }
 }
