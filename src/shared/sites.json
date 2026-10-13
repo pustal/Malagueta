@@ -1,0 +1,123 @@
+[
+  {
+    "id": "pornhub",
+    "name": "Pornhub",
+    "slot": 1,
+    "url": "https://www.pornhub.com/",
+    "domains": ["pornhub.com"],
+    "search": "/video/search?search={q}",
+    "space": "+",
+    "color": "#ff9000",
+    "cosmetic": [".adContainer", ".ad-link", "[class*='adsbytrafficjunky']", ".topAdContainter", ".realsex", "#pb_template", ".adWrapper", ".js-adRow"]
+  },
+  {
+    "id": "pornhub-premium",
+    "name": "Pornhub Premium",
+    "slot": 2,
+    "url": "https://www.pornhubpremium.com/",
+    "domains": ["pornhubpremium.com"],
+    "search": "/video/search?search={q}",
+    "space": "+",
+    "color": "#ffb347",
+    "cosmetic": [".adContainer", ".ad-link", "[class*='adsbytrafficjunky']"]
+  },
+  {
+    "id": "xhamster",
+    "name": "xHamster",
+    "slot": 3,
+    "url": "https://xhamster.com/",
+    "domains": ["xhamster.com", "xhamster.desi", "xhamster2.com", "xhamster3.com", "xhamster19.com"],
+    "search": "/search/{q}",
+    "space": "+",
+    "color": "#f2a33a",
+    "cosmetic": ["[data-role='promo']", "[class*='yxd-']", "[class*='-ad-']", ".banner-wrapper", ".clipstore-bottom", "[data-block='sponsored']"]
+  },
+  {
+    "id": "faphouse",
+    "name": "FapHouse",
+    "slot": 4,
+    "url": "https://faphouse.com/",
+    "domains": ["faphouse.com"],
+    "search": "/search/videos?q={q}",
+    "space": "%20",
+    "color": "#e83e5b",
+    "cosmetic": []
+  },
+  {
+    "id": "redtube",
+    "name": "RedTube",
+    "slot": 5,
+    "url": "https://www.redtube.com/",
+    "domains": ["redtube.com"],
+    "search": "/?search={q}",
+    "space": "+",
+    "color": "#d9201f",
+    "cosmetic": [".adContainer", "[class*='adsbytrafficjunky']", ".video_ad", ".remove_ads", "#video_right_col .ads_column"]
+  },
+  {
+    "id": "xvideos",
+    "name": "XVideos",
+    "slot": 6,
+    "url": "https://www.xvideos.com/",
+    "domains": ["xvideos.com"],
+    "search": "/?k={q}",
+    "space": "+",
+    "color": "#de2600",
+    "cosmetic": ["#video-ad", ".video-ad", "#ad-footer", ".thumb-ad", "#ad-header-mobile", ".ad-support-mobile", "#video-right .ad", ".remove-ads"]
+  },
+  {
+    "id": "xvideos-red",
+    "name": "XVideos RED",
+    "slot": 7,
+    "url": "https://www.xvideos.red/",
+    "domains": ["xvideos.red"],
+    "search": "/?k={q}",
+    "space": "+",
+    "color": "#b4001d",
+    "cosmetic": []
+  },
+  {
+    "id": "xnxx",
+    "name": "XNXX",
+    "slot": 8,
+    "url": "https://www.xnxx.com/",
+    "domains": ["xnxx.com"],
+    "search": "/search/{q}",
+    "space": "+",
+    "color": "#3b74d6",
+    "cosmetic": ["#video-ad", ".video-ad", "#ad-footer", ".thumb-ad", ".remove-ads"]
+  },
+  {
+    "id": "youporn",
+    "name": "YouPorn",
+    "slot": 9,
+    "url": "https://www.youporn.com/",
+    "domains": ["youporn.com"],
+    "search": "/search/?query={q}",
+    "space": "+",
+    "color": "#ec567c",
+    "cosmetic": [".adContainer", "[class*='adsbytrafficjunky']", ".ad-bottom-text", ".e8-column"]
+  },
+  {
+    "id": "spankbang",
+    "name": "SpankBang",
+    "slot": 10,
+    "url": "https://spankbang.com/",
+    "domains": ["spankbang.com"],
+    "search": "/s/{q}/",
+    "space": "+",
+    "color": "#f8b60b",
+    "cosmetic": [".ptgncdn_holder", "[class*='ad_box']", ".top-banner", ".b-v-adv"]
+  },
+  {
+    "id": "eporner",
+    "name": "Eporner",
+    "slot": 11,
+    "url": "https://www.eporner.com/",
+    "domains": ["eporner.com"],
+    "search": "/search/{q}/",
+    "space": "-",
+    "color": "#3f9de0",
+    "cosmetic": ["#vjs-ad", ".adnative", "[id^='ad-container']"]
+  }
+]

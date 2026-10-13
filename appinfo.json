@@ -1,0 +1,18 @@
+{
+  "id": "org.malagueta.app",
+  "version": "0.1.0",
+  "vendor": "Malagueta",
+  "type": "web",
+  "main": "index.html",
+  "title": "Malagueta",
+  "icon": "icons/icon.png",
+  "largeIcon": "icons/largeIcon.png",
+  "splashBackground": "icons/splash.png",
+  "bgColor": "#120a0b",
+  "iconColor": "#120a0b",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "handlesRelaunch": false,
+  "uiRevision": 2,
+  "requiredACG": []
+}

@@ -1,0 +1,33 @@
+{
+  "name": "malagueta",
+  "version": "0.1.0",
+  "description": "Adult website viewer for LG webOS TVs: popular sites with ads removed, sign-in and search, made for the remote.",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "build:dev": "node build.mjs --dev",
+    "watch": "node build.mjs --dev --watch",
+    "dev": "node build.mjs --dev && node dist/service/dev.js",
+    "test": "node --test test/*.test.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "package": "npm run build && ares-package dist/app dist/service -o out && node scripts/manifest.mjs",
+    "manifest": "node scripts/manifest.mjs",
+    "tv:install": "node scripts/tv.mjs install",
+    "tv:launch": "node scripts/tv.mjs launch",
+    "tv:inspect": "node scripts/tv.mjs inspect",
+    "tv:inspect-service": "node scripts/tv.mjs inspect-service",
+    "tv:deploy": "npm run package && npm run tv:install && npm run tv:launch"
+  },
+  "devDependencies": {
+    "@fontsource/figtree": "^5.3.0",
+    "@fontsource/fraunces": "^5.3.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "@webos-tools/cli": "^3.2.6",
+    "esbuild": "0.24.2"
+  }
+}

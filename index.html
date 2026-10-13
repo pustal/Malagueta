@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- The app's entry page on the TV. It only starts the local proxy (the
+       app's JS service) and moves on to the home screen the proxy serves.
+       See src/launcher/main.js. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Malagueta</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #120a0b; color: #f6ece6; }
+    body { display: flex; align-items: center; justify-content: center; flex-direction: column;
+           font: 400 calc(100vw / 75) / 1.4 'LG Smart UI', sans-serif; text-align: center; }
+    img { width: calc(100vw / 9); height: auto; border-radius: 22%; margin-bottom: 2vw; }
+    #status { color: #b49a93; max-width: 60vw; }
+    button { margin-top: 2vw; font: inherit; color: #fff; background: #e8341c; border: 0; border-radius: 0.6em;
+             padding: 0.5em 1.4em; outline: none; display: none; }
+    button:focus { box-shadow: 0 0 0 0.25em rgba(232, 52, 28, 0.45); }
+  </style>
+</head>
+<body>
+  <img src="icons/largeIcon.png" alt="">
+  <div id="status">Starting…</div>
+  <button id="retry">Try again</button>
+  <script src="launcher.js"></script>
+</body>
+</html>

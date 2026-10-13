@@ -1,0 +1,240 @@
+/*
+ * Malagueta home screen. Sized in rem from the viewport width (1rem = 16px on
+ * a 1920px-wide screen), so 720p TVs get the same layout, smaller.
+ * Bundled by esbuild for Chromium 53 (webOS 4): no gap on flex, no inset,
+ * no aspect-ratio; grid and custom properties are fine.
+ */
+@import '@fontsource/fraunces/latin-600.css';
+@import '@fontsource/fraunces/latin-600-italic.css';
+@import '@fontsource/figtree/latin-400.css';
+@import '@fontsource/figtree/latin-600.css';
+
+:root {
+  --bg: #120a0b;
+  --surface: #1d1113;
+  --surface-2: #29181a;
+  --ink: #f6ece6;
+  --muted: #b49a93;
+  --faint: #7f6762;
+  --pepper: #e8341c;
+  --pepper-glow: rgba(232, 52, 28, 0.35);
+  --leaf: #5aa93a;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-size: calc(100vw / 120);
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font: 400 1.6rem/1.35 'Figtree', 'LG Smart UI', sans-serif;
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgba(232, 52, 28, 0.16), transparent 70%),
+    radial-gradient(50rem 30rem at -10% 110%, rgba(90, 169, 58, 0.09), transparent 70%),
+    var(--bg);
+  overflow-x: hidden;
+}
+
+#app { padding: 3.5rem 5rem 2.5rem; }
+
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+/* ---- header ---------------------------------------------------------- */
+
+.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.75rem; }
+.brand { display: flex; align-items: center; }
+.logo { width: 5.5rem; height: 5.5rem; margin-right: 1.4rem; border-radius: 1.4rem; overflow: hidden; box-shadow: 0 0.6rem 2rem rgba(0, 0, 0, 0.5); }
+.logo svg { width: 100%; height: 100%; display: block; }
+.brand h1 {
+  margin: 0;
+  font: italic 600 4.2rem/1 'Fraunces', serif;
+  letter-spacing: -0.02em;
+}
+.actions .btn { margin-left: 1rem; }
+
+/* ---- buttons --------------------------------------------------------- */
+
+.btn {
+  border: 0.15rem solid transparent;
+  border-radius: 1rem;
+  padding: 0.9rem 1.8rem;
+  background: var(--surface-2);
+  outline: none;
+  transition: transform 0.12s, background 0.12s, border-color 0.12s;
+}
+.btn.ghost { background: transparent; border-color: rgba(255, 255, 255, 0.12); color: var(--muted); }
+.btn.primary { background: var(--pepper); color: #fff; }
+.btn.danger { color: #ff9a85; }
+
+/* D-pad focus. With the Magic Remote pointer, hover shows the same. */
+.focus, html.pointer .btn:hover, html.pointer .tile:hover, html.pointer .chip:hover {
+  border-color: var(--pepper) !important;
+  box-shadow: 0 0 0 0.35rem var(--pepper-glow);
+  transform: scale(1.04);
+}
+html.pointer .focus:not(:hover) { box-shadow: none; transform: none; border-color: transparent !important; }
+
+/* ---- search ---------------------------------------------------------- */
+
+.search { margin-bottom: 2.75rem; }
+.search-input {
+  width: 100%;
+  padding: 1.3rem 2rem 1.3rem 4.6rem;
+  border: 0.15rem solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.4rem;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b49a93' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5 21 21'/%3E%3C/svg%3E") no-repeat 1.6rem center / 2rem;
+  font-size: 2rem;
+  outline: none;
+}
+.search-input::-webkit-input-placeholder { color: var(--faint); } /* Chromium < 57 */
+.search-input::placeholder { color: var(--faint); }
+.search-input.focus { transform: none; }
+
+.chips { margin-top: 1.1rem; display: flex; flex-wrap: wrap; }
+.chip {
+  margin: 0 0.8rem 0.8rem 0;
+  padding: 0.55rem 1.3rem;
+  border: 0.15rem solid transparent;
+  border-radius: 99rem;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 1.35rem;
+  outline: none;
+  transition: transform 0.12s;
+}
+.chip::before {
+  content: '';
+  display: inline-block;
+  width: 0.75rem; height: 0.75rem;
+  margin-right: 0.6rem;
+  border-radius: 50%;
+  background: var(--c);
+  vertical-align: 0.05rem;
+}
+.chip.on { background: var(--surface-2); color: var(--ink); border-color: rgba(255, 255, 255, 0.2); }
+
+/* ---- grid ------------------------------------------------------------ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-gap: 1.8rem;
+}
+.tile {
+  position: relative;
+  height: 11.5rem;
+  padding: 1.8rem 2rem;
+  border: 0.15rem solid transparent;
+  border-radius: 1.6rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 60%),
+    var(--surface);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  outline: none;
+  transition: transform 0.14s, box-shadow 0.14s, border-color 0.14s;
+}
+/* The site's colour as a soft flare in the corner. */
+.tile::before {
+  content: '';
+  position: absolute;
+  top: -5rem; right: -5rem;
+  width: 13rem; height: 13rem;
+  border-radius: 50%;
+  background: var(--c);
+  opacity: 0.22;
+  filter: blur(1.5rem);
+  transition: opacity 0.14s;
+}
+.tile::after {
+  content: '';
+  position: absolute;
+  left: 2rem; top: 1.8rem;
+  width: 2.4rem; height: 0.35rem;
+  border-radius: 1rem;
+  background: var(--c);
+}
+.tile.focus::before { opacity: 0.45; }
+.tile-name {
+  position: relative;
+  font: 600 2.4rem/1.15 'Fraunces', serif;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tile-host { position: relative; margin-top: 0.4rem; color: var(--faint); font-size: 1.3rem; }
+.tile-badge {
+  position: absolute; right: 1.4rem; top: 1.3rem;
+  padding: 0.25rem 0.9rem; border-radius: 99rem;
+  background: rgba(0, 0, 0, 0.35); color: var(--muted); font-size: 1.2rem;
+}
+.tile.hidden { opacity: 0.45; }
+.tile.add { background: transparent; border: 0.15rem dashed rgba(255, 255, 255, 0.14); }
+.tile.add::before, .tile.add::after { display: none; }
+.tile.add .tile-name { font-family: 'Figtree', sans-serif; font-weight: 600; font-size: 2rem; color: var(--muted); }
+
+/* ---- footer ---------------------------------------------------------- */
+
+.hint { margin-top: 2.8rem; color: var(--faint); font-size: 1.3rem; }
+.hint b { color: var(--muted); font-weight: 600; }
+.k { display: inline-block; width: 1.1rem; height: 1.1rem; border-radius: 0.25rem; margin: 0 0.3rem 0 0.6rem; vertical-align: -0.1rem; }
+.k.red { background: #e53935; } .k.green { background: #43a047; }
+.k.yellow { background: #fdd835; } .k.blue { background: #1e88e5; }
+
+/* ---- dialogs --------------------------------------------------------- */
+
+.layer {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+  background: rgba(8, 4, 5, 0.72);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.dialog {
+  width: 60rem;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 3rem 3.5rem;
+  border-radius: 2rem;
+  background: linear-gradient(160deg, #2a1514, #170c0d);
+  border: 0.1rem solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.6);
+}
+.dialog h2 { margin: 0 0 1.4rem; font: 600 2.8rem/1.15 'Fraunces', serif; }
+.dialog p { margin: 0 0 1.2rem; }
+.muted { color: var(--muted); font-size: 1.35rem; }
+.error { color: #ff9a85; min-height: 1.4em; }
+.dialog-buttons { margin-top: 1.8rem; display: flex; }
+.dialog-buttons .btn { margin-right: 1rem; }
+.field { display: block; margin-bottom: 1.2rem; }
+.field span { display: block; color: var(--muted); font-size: 1.3rem; margin-bottom: 0.4rem; }
+.field-input {
+  width: 100%;
+  padding: 0.9rem 1.2rem;
+  border: 0.15rem solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.9rem;
+  background: rgba(0, 0, 0, 0.3);
+  outline: none;
+}
+.field-input.focus { transform: none; }
+
+/* PIN pad */
+.dialog.pin { width: 34rem; text-align: center; }
+.pin-dots { margin: 0.5rem 0 1.8rem; }
+.pin-dots span {
+  display: inline-block; width: 1.6rem; height: 1.6rem; margin: 0 0.7rem;
+  border-radius: 50%; border: 0.18rem solid var(--muted);
+}
+.pin-dots span.on { background: var(--pepper); border-color: var(--pepper); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 1rem; margin-bottom: 1.4rem; }
+.pin-key { font-size: 2.2rem; padding: 1rem 0; }
+.dialog.pin .dialog-buttons { justify-content: center; }

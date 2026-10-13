@@ -1,0 +1,7 @@
+{
+  "name": "org.malagueta.app.service",
+  "version": "0.1.0",
+  "description": "Local proxy that lets Malagueta show websites with ads removed and remote-control navigation.",
+  "main": "service.js",
+  "private": true
+}
